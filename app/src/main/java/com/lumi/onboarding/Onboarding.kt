@@ -3,15 +3,19 @@ package com.lumi.onboarding
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,13 +24,23 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+
+enum class Need(val label: String) {
+    VISION("Visão"),
+    COLOR("Daltonismo / contraste"),
+    HEARING("Audição"),
+    MOTOR("Dificuldade motora"),
+    MEMORY("Memória / leitura difícil"),
+}
 
 /** Erros do passo 1; null quando o campo está ok. */
 data class BasicDataErrors(val name: String?, val age: String?) {
@@ -48,12 +62,14 @@ fun Onboarding() {
     var step by rememberSaveable { mutableIntStateOf(1) }
     var name by rememberSaveable { mutableStateOf("") }
     var age by rememberSaveable { mutableStateOf("") }
+    var needs by rememberSaveable { mutableStateOf(emptySet<Need>()) }
 
     BackHandler(enabled = step > 1) { step-- }
 
     when (step) {
         1 -> BasicDataStep(name, { name = it }, age, { age = it }, onContinue = { step = 2 })
-        else -> StepScaffold("Passo 2 de 3", "Em breve") {}
+        2 -> NeedsStep(needs, { needs = it }, onBack = { step = 1 }, onContinue = { step = 3 })
+        else -> StepScaffold("Passo 3 de 3", "Em breve") {}
     }
 }
 
@@ -94,6 +110,36 @@ private fun BasicDataStep(
             modifier = Modifier.fillMaxWidth(),
         )
         BigButton("Continuar") { if (errors.ok) onContinue() else showErrors = true }
+    }
+}
+
+@Composable
+private fun NeedsStep(
+    needs: Set<Need>,
+    onNeeds: (Set<Need>) -> Unit,
+    onBack: () -> Unit,
+    onContinue: () -> Unit,
+) {
+    StepScaffold("Passo 2 de 3", "Precisa de alguma ajuda?") {
+        Text("Marque o que combina com você. Pode marcar várias opções ou nenhuma.")
+        Need.entries.forEach { need ->
+            val checked = need in needs
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 64.dp)
+                    .toggleable(checked, role = Role.Checkbox) { onNeeds(if (it) needs + need else needs - need) }
+                    .padding(horizontal = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = checked, onCheckedChange = null)
+                Text(need.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 16.dp))
+            }
+        }
+        BigButton("Ajustar o app para mim", onContinue)
+        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+            Text("Voltar", style = MaterialTheme.typography.titleMedium)
+        }
     }
 }
 
