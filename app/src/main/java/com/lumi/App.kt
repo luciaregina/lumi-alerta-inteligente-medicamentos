@@ -8,6 +8,13 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Inventory2
+import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.SupervisorAccount
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -24,7 +31,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.sp
 import com.lumi.alarm.Alarms
 import com.lumi.caregiver.CaregiverScreen
@@ -38,12 +45,12 @@ import com.lumi.ui.theme.LumiTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
-enum class Tab(val label: String, val icon: String) {
-    HOME("Início", "🏠"),
-    MEDS("Remédios", "💊"),
-    STOCK("Estoque", "📦"),
-    CAREGIVER("Cuidador", "👤"),
-    SETTINGS("Ajustes", "⚙️"),
+enum class Tab(val label: String, val icon: ImageVector) {
+    HOME("Início", Icons.Outlined.Home),
+    MEDS("Remédios", Icons.Outlined.Medication),
+    STOCK("Estoque", Icons.Outlined.Inventory2),
+    CAREGIVER("Cuidador", Icons.Outlined.SupervisorAccount),
+    SETTINGS("Ajustes", Icons.Outlined.Settings),
 }
 
 @Composable
@@ -84,7 +91,7 @@ fun LumiApp(prefs: SharedPreferences) {
                         selected = t == tab,
                         onClick = { tab = t },
                         // O ícone é decorativo; o leitor de tela lê só o rótulo.
-                        icon = { Text(t.icon, Modifier.clearAndSetSemantics {}) },
+                        icon = { Icon(t.icon, contentDescription = null) },
                         // Uma linha só: com letra grande o texto encolhe em vez de quebrar no meio da palavra.
                         label = { Text(t.label, maxLines = 1, softWrap = false, autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize)) },
                     )

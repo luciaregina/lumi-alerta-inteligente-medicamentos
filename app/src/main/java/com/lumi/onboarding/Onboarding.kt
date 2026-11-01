@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -28,6 +30,7 @@ import com.lumi.LocalProfile
 import com.lumi.Profile
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
+import com.lumi.ui.IconLabel
 import com.lumi.ui.Screen
 
 enum class Need(val label: String) {
@@ -99,7 +102,7 @@ fun Onboarding(onProfile: (Profile) -> Unit, onDone: (name: String, age: Int) ->
 @Composable
 private fun SummaryStep(onBack: () -> Unit, onDone: () -> Unit) {
     Screen("Pronto! Ajustamos o app para você", "Passo 3 de 3") {
-        LocalProfile.current.summary().forEach { Text("✓ $it", style = MaterialTheme.typography.titleMedium) }
+        LocalProfile.current.summary().forEach { IconLabel(Icons.Outlined.CheckCircle, it, MaterialTheme.typography.titleMedium) }
         Text("Você pode mudar isso quando quiser em Ajustes.")
         BigButton("Começar a usar", onDone)
         BackButton(onBack)
