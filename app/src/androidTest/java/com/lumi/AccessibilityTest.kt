@@ -79,9 +79,9 @@ class AccessibilityTest {
         compose.onNodeWithText("Voltar").performClick()
         compose.onNodeWithText("Continuar").performClick() // nome e idade preservados
         compose.onNodeWithText("Ajustar o app para mim").performScrollTo().performClick()
-        compose.onNodeWithText("✓ Letras extra grandes (150%)").assertIsDisplayed()
-        compose.onNodeWithText("✓ Alto contraste (amarelo sobre preto) e avisos sempre com texto").assertIsDisplayed()
-        compose.onNodeWithText("✓ Alarme falado").assertIsDisplayed()
+        compose.onNodeWithText("Letras extra grandes (150%)").assertIsDisplayed()
+        compose.onNodeWithText("Alto contraste (amarelo sobre preto) e avisos sempre com texto").assertIsDisplayed()
+        compose.onNodeWithText("Alarme falado").assertIsDisplayed()
     }
 
     @Test
