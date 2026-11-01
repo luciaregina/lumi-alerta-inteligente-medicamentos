@@ -1,7 +1,7 @@
 package com.lumi.meds
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -17,7 +17,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
@@ -77,19 +76,17 @@ fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
 
 @Composable
 private fun DoseCard(d: Dose, done: Boolean, onTake: () -> Unit) {
+    // Coluna em vez de linha: com letra grande nada fica espremido.
     OutlinedCard(Modifier.fillMaxWidth()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text(d.time, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(d.med.name, style = MaterialTheme.typography.titleLarge)
-                Text(d.med.dose, style = MaterialTheme.typography.bodyLarge)
-            }
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("${d.time} · ${d.med.name}", style = MaterialTheme.typography.titleLarge)
+            Text(d.med.dose, style = MaterialTheme.typography.bodyLarge)
             if (done) {
                 Text("✓ Tomado", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
             } else {
                 Button(
                     onClick = onTake,
-                    modifier = Modifier.heightIn(min = 56.dp).focusRing()
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing()
                         .semantics { contentDescription = "Já tomei ${d.med.name} das ${d.time}" },
                 ) { Text("Já tomei") }
             }
