@@ -10,7 +10,6 @@ import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import com.lumi.R
 import com.lumi.data.LumiDb
 import com.lumi.data.Medication
 import kotlinx.coroutines.CoroutineScope
@@ -81,7 +80,7 @@ object Alarms {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val n = NotificationCompat.Builder(context, CHANNEL)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(android.R.drawable.ic_popup_reminder) // ícone nativo do sistema (barra de status pede ícone monocromático)
             .setContentTitle("Hora do remédio")
             .setContentText("Dose das $time")
             .setCategory(NotificationCompat.CATEGORY_ALARM)
