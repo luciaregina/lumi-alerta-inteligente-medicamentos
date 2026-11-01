@@ -1,14 +1,18 @@
 package com.lumi.ui.theme
 
+import android.app.Activity
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.unit.Density
+import androidx.core.view.WindowCompat
 import com.lumi.LocalProfile
 import com.lumi.Profile
 import com.lumi.ThemeMode
@@ -40,7 +44,7 @@ private val HighContrast = darkColorScheme(
     surface = Color.Black, onSurface = Yellow,
     surfaceVariant = Color.Black, onSurfaceVariant = Yellow,
     surfaceContainer = Color.Black, surfaceContainerHigh = Color.Black, surfaceContainerHighest = Color.Black,
-    outline = Yellow, error = Yellow, onError = Color.Black,
+    outline = Yellow, outlineVariant = Yellow, error = Yellow, onError = Color.Black,
     errorContainer = Color.Black, onErrorContainer = Yellow,
 )
 
@@ -55,6 +59,12 @@ fun LumiTheme(profile: Profile = Profile(), content: @Composable () -> Unit) {
         profile.highContrast -> HighContrast
         dark -> Dark
         else -> Light
+    }
+    // Ícones da barra de status escuros no tema claro e claros nos temas escuros.
+    val view = LocalView.current
+    val lightBars = !profile.highContrast && !dark
+    if (!view.isInEditMode) SideEffect {
+        (view.context as? Activity)?.window?.let { WindowCompat.getInsetsController(it, view).isAppearanceLightStatusBars = lightBars }
     }
     val density = LocalDensity.current
     CompositionLocalProvider(

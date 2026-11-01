@@ -11,9 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -49,7 +49,7 @@ fun WhereToBuy() {
     SectionTitle("Onde comprar")
     Text("Farmácias perto de você (exemplo)", style = MaterialTheme.typography.bodyLarge)
     SAMPLE_PHARMACIES.forEach { p ->
-        Card(Modifier.fillMaxWidth()) {
+        OutlinedCard(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(p.name, style = MaterialTheme.typography.titleLarge)

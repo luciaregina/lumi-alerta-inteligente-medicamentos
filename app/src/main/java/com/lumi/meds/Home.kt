@@ -6,10 +6,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,7 +47,7 @@ fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
     Screen("Olá, $name!") {
         val low = meds.filter { it.lowStock }
         if (low.isNotEmpty()) {
-            Card(
+            OutlinedCard(
                 Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
@@ -77,7 +77,7 @@ fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
 
 @Composable
 private fun DoseCard(d: Dose, done: Boolean, onTake: () -> Unit) {
-    Card(Modifier.fillMaxWidth()) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(d.time, style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(end = 16.dp))
             Column(Modifier.weight(1f)) {
