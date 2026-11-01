@@ -19,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
 import com.lumi.data.LumiDb
+import com.lumi.meds.HomeScreen
 import com.lumi.meds.MedsScreen
 import com.lumi.onboarding.Onboarding
 import com.lumi.settings.SettingsScreen
@@ -70,6 +71,7 @@ fun LumiApp(prefs: SharedPreferences) {
         }) { padding ->
             Box(Modifier.padding(padding)) {
                 when (tab) {
+                    Tab.HOME -> HomeScreen(name, dao)
                     Tab.MEDS -> MedsScreen(dao)
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()

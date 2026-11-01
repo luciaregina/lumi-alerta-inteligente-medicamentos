@@ -16,3 +16,15 @@ class MedicationTest {
         assertEquals(emptyList<String>(), c.toList(c.fromList(emptyList())))
     }
 }
+
+class HomeTest {
+    @Test
+    fun dosesDoDiaOrdenadasPorHorario() {
+        val a = Medication(1, "Losartana", "1 comprimido", listOf("08:00", "20:00"), 10)
+        val b = Medication(2, "AAS", "1 comprimido", listOf("12:00", "08:00"), 10)
+        assertEquals(
+            listOf("08:00 AAS", "08:00 Losartana", "12:00 AAS", "20:00 Losartana"),
+            com.lumi.meds.todayDoses(listOf(a, b)).map { "${it.time} ${it.med.name}" },
+        )
+    }
+}
