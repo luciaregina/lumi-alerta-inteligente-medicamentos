@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.WarningAmber
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -54,7 +56,7 @@ fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
             ) {
                 Column(Modifier.padding(16.dp)) {
-                    Text("⚠ Estoque acabando", style = MaterialTheme.typography.titleLarge)
+                    IconLabel(Icons.Outlined.WarningAmber, "Estoque acabando", MaterialTheme.typography.titleLarge)
                     Text(low.joinToString { "${it.name} (${it.daysLeft} dia(s))" }, style = MaterialTheme.typography.bodyLarge)
                     TextButton(onClick = onOpenStock, modifier = Modifier.focusRing()) { Text("Ver estoque") }
                 }
@@ -67,7 +69,7 @@ fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
             OutlinedButton(
                 onClick = { context.startActivity(Alarms.screenIntent(context, first.med.id, first.time)) },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing(),
-            ) { Text("🔔 Testar alarme") }
+            ) { IconLabel(Icons.Outlined.NotificationsActive, "Testar alarme") }
         }
         if (doses.isEmpty()) Text("Nenhuma dose para hoje. Cadastre seus remédios na aba Remédios.")
         doses.forEach { d ->
