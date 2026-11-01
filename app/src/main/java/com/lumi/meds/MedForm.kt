@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PhotoCamera
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -26,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.lumi.data.Medication
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
+import com.lumi.ui.IconLabel
 import com.lumi.ui.Screen
 import com.lumi.ui.focusRing
 
@@ -71,7 +74,7 @@ fun MedForm(initial: Medication? = null, onSave: (Medication) -> Unit, onCancel:
                 scanned = true
             },
             modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing(),
-        ) { Text("📷 Escanear receita (simulação)") }
+        ) { IconLabel(Icons.Outlined.PhotoCamera, "Escanear receita (simulação)") }
         if (scanned) {
             Text(
                 "Dados lidos da receita. Confira tudo antes de salvar.",

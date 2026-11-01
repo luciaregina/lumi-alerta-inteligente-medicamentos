@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -25,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.lumi.alarm.Alarms
 import com.lumi.data.LumiDao
 import com.lumi.data.Medication
+import com.lumi.ui.IconLabel
 import com.lumi.ui.Screen
 import com.lumi.ui.focusRing
 import kotlinx.coroutines.launch
@@ -82,7 +85,7 @@ private fun DoseCard(d: Dose, done: Boolean, onTake: () -> Unit) {
             Text("${d.time} · ${d.med.name}", style = MaterialTheme.typography.titleLarge)
             Text(d.med.dose, style = MaterialTheme.typography.bodyLarge)
             if (done) {
-                Text("✓ Tomado", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                IconLabel(Icons.Outlined.CheckCircle, "Tomado", MaterialTheme.typography.titleMedium, MaterialTheme.colorScheme.primary)
             } else {
                 Button(
                     onClick = onTake,
