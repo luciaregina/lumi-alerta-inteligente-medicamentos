@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -85,7 +86,7 @@ fun LumiApp(prefs: SharedPreferences) {
                         // O ícone é decorativo; o leitor de tela lê só o rótulo.
                         icon = { Text(t.icon, Modifier.clearAndSetSemantics {}) },
                         // Uma linha só: com letra grande o texto encolhe em vez de quebrar no meio da palavra.
-                        label = { Text(t.label, maxLines = 1, softWrap = false, autoSize = TextAutoSize.StepBased(minFontSize = 10.sp)) },
+                        label = { Text(t.label, maxLines = 1, softWrap = false, autoSize = TextAutoSize.StepBased(minFontSize = 10.sp, maxFontSize = MaterialTheme.typography.labelMedium.fontSize)) },
                     )
                 }
             }
