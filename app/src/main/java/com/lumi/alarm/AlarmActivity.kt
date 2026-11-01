@@ -1,9 +1,18 @@
 package com.lumi.alarm
 
 import android.os.Bundle
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.provider.Settings
+import android.speech.tts.TextToSpeech
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,9 +47,34 @@ import com.lumi.loadProfile
 import com.lumi.ui.focusRing
 import com.lumi.ui.theme.LumiTheme
 import kotlinx.coroutines.launch
+import java.util.Locale
+
+fun alarmSpeech(m: Medication, time: String) = "Hora do remédio. ${m.name}. ${m.dose}. $time"
 
 /** Alarme em tela cheia, aparece até com o celular bloqueado. */
 class AlarmActivity : ComponentActivity() {
+    private var tts: TextToSpeech? = null
+    private val vibrator by lazy { getSystemService(Vibrator::class.java) }
+
+    override fun onDestroy() {
+        tts?.shutdown()
+        vibrator.cancel()
+        super.onDestroy()
+    }
+
+    private fun speak(text: String) {
+        tts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                tts?.language = Locale.forLanguageTag("pt-BR")
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "alarm")
+            }
+        }
+    }
+
+    /** Usuário pediu "remover animações" no sistema. */
+    private fun reducedMotion() =
+        Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -53,11 +87,16 @@ class AlarmActivity : ComponentActivity() {
 
         setContent {
             var med by remember { mutableStateOf<Medication?>(null) }
-            LaunchedEffect(medId) { med = dao.med(medId) ?: run { finish(); null } }
+            LaunchedEffect(medId) {
+                val m = dao.med(medId) ?: return@LaunchedEffect finish()
+                med = m
+                if (profile.spokenAlarm) speak(alarmSpeech(m, time))
+                if (profile.vibration) vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 800, 400), 0))
+            }
             LumiTheme(profile) {
                 med?.let { m ->
                     AlarmScreen(
-                        m, time,
+                        m, time, flash = profile.flashAlarm && !reducedMotion(),
                         onTaken = { lifecycleScope.launch { dao.markTaken(m.id, time); finish() } },
                         onSnooze = { Alarms.snooze(this, m.id, time); finish() },
                     )
@@ -68,10 +107,20 @@ class AlarmActivity : ComponentActivity() {
 }
 
 @Composable
-private fun AlarmScreen(m: Medication, time: String, onTaken: () -> Unit, onSnooze: () -> Unit) {
+private fun AlarmScreen(m: Medication, time: String, flash: Boolean, onTaken: () -> Unit, onSnooze: () -> Unit) {
     val focus = remember { FocusRequester() }
     LaunchedEffect(Unit) { focus.requestFocus() }
-    Surface(Modifier.fillMaxSize().semantics { paneTitle = "Alarme de remédio" }) {
+    // Pisca 1 vez por segundo: abaixo do limite de 3 por segundo (WCAG 2.3.1) para não causar crises.
+    val phase by rememberInfiniteTransition(label = "flash").animateFloat(
+        0f, 1f, infiniteRepeatable(tween(1000, easing = LinearEasing)), label = "flash",
+    )
+    val on = flash && phase < 0.5f
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        Modifier.fillMaxSize().semantics { paneTitle = "Alarme de remédio" },
+        color = if (on) colors.primary else colors.surface,
+        contentColor = if (on) colors.onPrimary else colors.onSurface,
+    ) {
         Column(
             Modifier.fillMaxSize().padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterVertically),
