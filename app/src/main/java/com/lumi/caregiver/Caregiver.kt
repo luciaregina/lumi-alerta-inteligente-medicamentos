@@ -10,6 +10,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.NotificationImportant
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +47,7 @@ import com.lumi.data.Medication
 import com.lumi.data.LumiDao
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
+import com.lumi.ui.IconLabel
 import com.lumi.ui.Screen
 import com.lumi.ui.SectionTitle
 import com.lumi.ui.focusRing
@@ -96,7 +100,7 @@ fun CaregiverScreen(dao: LumiDao) {
 
     caregiver?.let { cg ->
         Screen("Responsável") {
-            Text("✓ Responsável conectado", style = MaterialTheme.typography.titleLarge)
+            IconLabel(Icons.Outlined.VerifiedUser, "Responsável conectado", MaterialTheme.typography.titleLarge)
             Text("${cg.name} (${cg.relation})", style = MaterialTheme.typography.headlineSmall)
             Text("Essa pessoa acompanha seus remédios e recebe avisos.")
 
@@ -106,7 +110,7 @@ fun CaregiverScreen(dao: LumiDao) {
             SectionTitle("Avisos para ${cg.name}")
             // ponytail: simulação. Enviar como push (ex.: Firebase Cloud Messaging) quando houver backend.
             if (alerts.isEmpty()) Text("Nenhum aviso agora. Tudo em dia!")
-            alerts.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
+            alerts.forEach { IconLabel(Icons.Outlined.NotificationImportant, it, MaterialTheme.typography.bodyLarge) }
 
             var confirm by rememberSaveable { mutableStateOf(false) }
             BackButton(onClick = { confirm = true }, text = "Remover acesso")
