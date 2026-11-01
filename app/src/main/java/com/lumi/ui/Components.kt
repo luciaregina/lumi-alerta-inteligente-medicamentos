@@ -3,6 +3,7 @@ package com.lumi.ui
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -26,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.lumi.LocalProfile
 
 @Composable
-fun Screen(title: String, label: String? = null, content: @Composable () -> Unit) {
+fun Screen(title: String, label: String? = null, content: @Composable ColumnScope.() -> Unit) {
     Column(
         Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -60,8 +61,8 @@ fun BigButton(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun BackButton(onClick: () -> Unit) {
+fun BackButton(onClick: () -> Unit, text: String = "Voltar") {
     OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight).focusRing()) {
-        Text("Voltar", style = MaterialTheme.typography.titleMedium)
+        Text(text, style = MaterialTheme.typography.titleMedium)
     }
 }

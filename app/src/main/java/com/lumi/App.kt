@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
@@ -23,8 +22,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.unit.dp
 import com.lumi.alarm.Alarms
+import com.lumi.caregiver.CaregiverScreen
 import com.lumi.data.LumiDb
 import com.lumi.meds.HomeScreen
 import com.lumi.meds.MedsScreen
@@ -89,11 +88,11 @@ fun LumiApp(prefs: SharedPreferences) {
                     Tab.HOME -> HomeScreen(name, dao, onOpenStock = { tab = Tab.STOCK })
                     Tab.MEDS -> MedsScreen(dao)
                     Tab.STOCK -> StockScreen(dao)
+                    Tab.CAREGIVER -> CaregiverScreen()
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()
                         userName = null
                     })
-                    else -> Text(tab.label, Modifier.padding(24.dp), style = MaterialTheme.typography.headlineMedium)
                 }
             }
         }
