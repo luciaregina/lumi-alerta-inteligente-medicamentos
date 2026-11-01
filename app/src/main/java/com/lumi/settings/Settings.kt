@@ -6,12 +6,18 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -25,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.lumi.LocalProfile
 import com.lumi.Profile
 import com.lumi.ThemeMode
+import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
 import com.lumi.ui.SectionTitle
@@ -34,7 +41,13 @@ import com.lumi.ui.focusRing
 fun stepFont(scale: Float, steps: Int): Float = ((Math.round(scale * 10) + steps).coerceIn(9, 20)) / 10f
 
 @Composable
-fun SettingsScreen(profile: Profile, onProfile: (Profile) -> Unit, onRedoOnboarding: () -> Unit) {
+fun SettingsScreen(
+    profile: Profile,
+    onProfile: (Profile) -> Unit,
+    onRedoOnboarding: () -> Unit,
+    onDeleteAll: () -> Unit,
+) {
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
     Screen("Ajustes") {
         SectionTitle("Tamanho da letra")
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -71,6 +84,20 @@ fun SettingsScreen(profile: Profile, onProfile: (Profile) -> Unit, onRedoOnboard
         SectionTitle("Cadastro")
         Text("Quer responder o cadastro de novo e reajustar o app?")
         BigButton("Refazer cadastro", onRedoOnboarding)
+
+        SectionTitle("Privacidade")
+        Text("Seus dados de saúde ficam guardados só neste celular. Você pode apagar tudo a qualquer momento.")
+        BackButton(onClick = { confirmDelete = true }, text = "Apagar meus dados")
+    }
+
+    if (confirmDelete) {
+        AlertDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Apagar todos os seus dados?") },
+            text = { Text("Remédios, histórico de doses, responsável e cadastro serão apagados. Não dá para desfazer.") },
+            confirmButton = { TextButton(onClick = { confirmDelete = false; onDeleteAll() }) { Text("Apagar") } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Cancelar") } },
+        )
     }
 }
 

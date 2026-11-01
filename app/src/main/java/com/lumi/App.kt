@@ -17,6 +17,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -31,6 +32,8 @@ import com.lumi.onboarding.Onboarding
 import com.lumi.settings.SettingsScreen
 import com.lumi.stock.StockScreen
 import com.lumi.ui.theme.LumiTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 enum class Tab(val label: String, val icon: String) {
     HOME("Início", "🏠"),
@@ -46,6 +49,7 @@ fun LumiApp(prefs: SharedPreferences) {
     var userName by remember { mutableStateOf(prefs.getString("name", null)) }
     val context = LocalContext.current
     val dao = remember { LumiDb.get(context).dao() }
+    val scope = rememberCoroutineScope()
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
     val setProfile = { p: Profile -> profile = p; prefs.saveProfile(p) }
 
@@ -89,10 +93,19 @@ fun LumiApp(prefs: SharedPreferences) {
                     Tab.MEDS -> MedsScreen(dao)
                     Tab.STOCK -> StockScreen(dao)
                     Tab.CAREGIVER -> CaregiverScreen(dao)
-                    Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
-                        prefs.edit().remove("name").remove("age").apply()
-                        userName = null
-                    })
+                    Tab.SETTINGS -> SettingsScreen(
+                        profile, setProfile,
+                        onRedoOnboarding = {
+                            prefs.edit().remove("name").remove("age").apply()
+                            userName = null
+                        },
+                        onDeleteAll = {
+                            scope.launch(Dispatchers.IO) { LumiDb.get(context).clearAllTables() }
+                            prefs.edit().clear().apply()
+                            setProfile(Profile())
+                            userName = null
+                        },
+                    )
                 }
             }
         }

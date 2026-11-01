@@ -3,11 +3,15 @@ package com.lumi.caregiver
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -27,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +46,7 @@ import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
 import com.lumi.ui.SectionTitle
+import com.lumi.ui.focusRing
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
@@ -141,7 +147,20 @@ fun CaregiverScreen(dao: LumiDao) {
         val c = code?.takeIf { it.valid(now) }
         if (c == null) {
             if (code != null) Text("O código expirou. Gere um novo.", style = MaterialTheme.typography.titleMedium)
-            BigButton("Gerar QR Code") { code = newAccessCode(System.currentTimeMillis()) }
+            // LGPD: consentimento explícito antes de compartilhar dados de saúde.
+            var consent by rememberSaveable { mutableStateOf(false) }
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing()
+                    .toggleable(consent, role = Role.Checkbox) { consent = it },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Checkbox(checked = consent, onCheckedChange = null)
+                Text(
+                    "Autorizo compartilhar meus remédios, horários e estoque com o responsável. Posso remover o acesso quando quiser.",
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+            if (consent) BigButton("Gerar QR Code") { code = newAccessCode(System.currentTimeMillis()) }
         } else {
             Text("Peça para o responsável escanear este código no app LUMI dele.")
             QrCode("lumi:${c.code}", Modifier.align(Alignment.CenterHorizontally))
