@@ -15,8 +15,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import com.lumi.data.LumiDb
+import com.lumi.meds.MedsScreen
 import com.lumi.onboarding.Onboarding
 import com.lumi.settings.SettingsScreen
 import com.lumi.ui.theme.LumiTheme
@@ -33,6 +36,8 @@ enum class Tab(val label: String, val icon: String) {
 fun LumiApp(prefs: SharedPreferences) {
     var profile by remember { mutableStateOf(prefs.loadProfile()) }
     var userName by remember { mutableStateOf(prefs.getString("name", null)) }
+    val context = LocalContext.current
+    val dao = remember { LumiDb.get(context).dao() }
     var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
     val setProfile = { p: Profile -> profile = p; prefs.saveProfile(p) }
 
@@ -65,6 +70,7 @@ fun LumiApp(prefs: SharedPreferences) {
         }) { padding ->
             Box(Modifier.padding(padding)) {
                 when (tab) {
+                    Tab.MEDS -> MedsScreen(dao)
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()
                         userName = null
