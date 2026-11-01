@@ -14,6 +14,8 @@ import androidx.room.Transaction
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import kotlinx.coroutines.flow.Flow
 import java.time.LocalDate
 
@@ -39,6 +41,10 @@ data class DoseTaken(val day: String, val medId: Long, val time: String)
 @Entity
 data class Caregiver(@PrimaryKey val id: Int = 0, val name: String, val relation: String)
 
+/** Foto da receita (JPEG comprimido) de um remédio. Tabela separada para a lista não carregar imagens. */
+@Entity
+class Prescription(@PrimaryKey val medId: Long, val jpeg: ByteArray)
+
 class Converters {
     @TypeConverter fun fromList(v: List<String>) = v.joinToString(",")
     @TypeConverter fun toList(v: String) = if (v.isEmpty()) emptyList() else v.split(",")
@@ -59,7 +65,34 @@ interface LumiDao {
     @Update suspend fun update(m: Medication)
 
     @Query("DELETE FROM Medication WHERE id = :id")
-    suspend fun deleteMed(id: Long)
+    suspend fun deleteMedRow(id: Long)
+
+    /** Remove o remédio e a foto da receita junto. */
+    @Transaction
+    suspend fun deleteMed(id: Long) {
+        deletePrescription(id)
+        deleteMedRow(id)
+    }
+
+    /** Salva o remédio e, se houver, a foto da receita. */
+    @Transaction
+    suspend fun insertWithPrescription(m: Medication, jpeg: ByteArray?): Long {
+        val id = insert(m)
+        if (jpeg != null) setPrescription(Prescription(id, jpeg))
+        return id
+    }
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun setPrescription(p: Prescription)
+
+    @Query("SELECT jpeg FROM Prescription WHERE medId = :medId")
+    suspend fun prescription(medId: Long): ByteArray?
+
+    @Query("SELECT medId FROM Prescription")
+    fun medsWithPrescription(): Flow<List<Long>>
+
+    @Query("DELETE FROM Prescription WHERE medId = :medId")
+    suspend fun deletePrescription(medId: Long)
 
     @Query("SELECT * FROM DoseTaken WHERE day = :day")
     fun takenOn(day: String): Flow<List<DoseTaken>>
@@ -92,7 +125,14 @@ interface LumiDao {
     suspend fun removeCaregiver()
 }
 
-@Database(entities = [Medication::class, DoseTaken::class, Caregiver::class], version = 1, exportSchema = false)
+/** v1 -> v2: tabela da foto da receita (SCRUM-37). Mantém os dados de quem já tinha a v1.0.0. */
+val MIGRATION_1_2 = object : Migration(1, 2) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("CREATE TABLE IF NOT EXISTS `Prescription` (`medId` INTEGER NOT NULL, `jpeg` BLOB NOT NULL, PRIMARY KEY(`medId`))")
+    }
+}
+
+@Database(entities = [Medication::class, DoseTaken::class, Caregiver::class, Prescription::class], version = 2, exportSchema = false)
 @TypeConverters(Converters::class)
 abstract class LumiDb : RoomDatabase() {
     abstract fun dao(): LumiDao
@@ -102,6 +142,7 @@ abstract class LumiDb : RoomDatabase() {
 
         fun get(context: Context): LumiDb = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(context.applicationContext, LumiDb::class.java, "lumi.db")
+                .addMigrations(MIGRATION_1_2)
                 .build().also { instance = it }
         }
     }

@@ -29,6 +29,14 @@ class DbTest {
         assertEquals(listOf("08:00", "20:00"), med.times)
         assertEquals(1, dao.takenOn(java.time.LocalDate.now().toString()).first().size)
 
+        // Foto da receita: salva junto e some ao remover o remédio (SCRUM-37)
+        val bytes = byteArrayOf(1, 2, 3)
+        val comFoto = dao.insertWithPrescription(Medication(name = "AAS", dose = "1 comprimido", times = listOf("12:00"), stock = 5), bytes)
+        assertEquals(bytes.toList(), dao.prescription(comFoto)?.toList())
+        assertEquals(listOf(comFoto), dao.medsWithPrescription().first())
+        dao.deleteMed(comFoto)
+        assertNull(dao.prescription(comFoto))
+
         dao.setCaregiver(Caregiver(name = "Ana", relation = "Filha"))
         assertEquals("Ana", dao.caregiver().first()?.name)
         dao.removeCaregiver()
