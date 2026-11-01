@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.lumi.data.LumiDao
 import com.lumi.data.Medication
+import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
 import com.lumi.ui.focusRing
 import kotlinx.coroutines.launch
@@ -30,8 +31,18 @@ fun MedsScreen(dao: LumiDao) {
     val meds by dao.meds().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
     var toRemove by rememberSaveable { mutableStateOf<Long?>(null) }
+    var adding by rememberSaveable { mutableStateOf(false) }
+
+    if (adding) {
+        MedForm(
+            onSave = { scope.launch { dao.insert(it) }; adding = false },
+            onCancel = { adding = false },
+        )
+        return
+    }
 
     Screen("Meus remédios") {
+        BigButton("+ Adicionar remédio") { adding = true }
         if (meds.isEmpty()) Text("Nenhum remédio ainda.", style = MaterialTheme.typography.titleMedium)
         meds.forEach { MedCard(it, onRemove = { toRemove = it.id }) }
     }
