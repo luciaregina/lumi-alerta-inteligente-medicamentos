@@ -23,6 +23,7 @@ import com.lumi.meds.HomeScreen
 import com.lumi.meds.MedsScreen
 import com.lumi.onboarding.Onboarding
 import com.lumi.settings.SettingsScreen
+import com.lumi.stock.StockScreen
 import com.lumi.ui.theme.LumiTheme
 
 enum class Tab(val label: String, val icon: String) {
@@ -73,6 +74,7 @@ fun LumiApp(prefs: SharedPreferences) {
                 when (tab) {
                     Tab.HOME -> HomeScreen(name, dao)
                     Tab.MEDS -> MedsScreen(dao)
+                    Tab.STOCK -> StockScreen(dao)
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()
                         userName = null
