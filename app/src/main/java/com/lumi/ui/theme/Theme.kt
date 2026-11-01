@@ -24,6 +24,8 @@ private val Yellow = Color(0xFFFFEB3B)    // 17:1 sobre preto
 
 private val Light = lightColorScheme(
     primary = Teal, onPrimary = Color.White,
+    secondaryContainer = Color(0xFFCCE8EA), onSecondaryContainer = Color(0xFF002022),
+    surfaceContainer = Color(0xFFF0F4F4),
     background = Color.White, onBackground = Color(0xFF1A1C1C),
     surface = Color.White, onSurface = Color(0xFF1A1C1C),
     error = Color(0xFFB3261E), onError = Color.White,
@@ -31,6 +33,8 @@ private val Light = lightColorScheme(
 
 private val Dark = darkColorScheme(
     primary = TealLight, onPrimary = Color(0xFF00363A),
+    secondaryContainer = Color(0xFF1F4D51), onSecondaryContainer = Color(0xFFCCE8EA),
+    surfaceContainer = Color(0xFF1E2121),
     background = Color(0xFF121212), onBackground = Color(0xFFE2E3E3),
     surface = Color(0xFF121212), onSurface = Color(0xFFE2E3E3),
     error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
