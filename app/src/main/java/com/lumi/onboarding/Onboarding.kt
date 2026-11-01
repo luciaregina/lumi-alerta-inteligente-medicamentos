@@ -33,6 +33,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.lumi.LocalProfile
+import com.lumi.Profile
 
 enum class Need(val label: String) {
     VISION("Visão"),
@@ -40,6 +42,30 @@ enum class Need(val label: String) {
     HEARING("Audição"),
     MOTOR("Dificuldade motora"),
     MEMORY("Memória / leitura difícil"),
+}
+
+/** Regras de autoconfiguração a partir de idade e necessidades. */
+fun autoConfig(age: Int, needs: Set<Need>): Profile {
+    var p = Profile()
+    if (age >= 60) p = p.copy(fontScale = 1.25f, bigButtons = true, simpleMode = true)
+    if (Need.VISION in needs) p = p.copy(fontScale = 1.5f, highContrast = true, spokenAlarm = true)
+    if (Need.COLOR in needs) p = p.copy(highContrast = true)
+    if (Need.HEARING in needs) p = p.copy(flashAlarm = true, vibration = true)
+    if (Need.MOTOR in needs) p = p.copy(bigButtons = true)
+    if (Need.MEMORY in needs) p = p.copy(simpleMode = true)
+    return p
+}
+
+/** O que foi ajustado, em frases para o passo 3. */
+fun Profile.summary(): List<String> = buildList {
+    if (fontScale > 1f) add("Letras ${if (fontScale >= 1.5f) "extra grandes" else "maiores"} (${(fontScale * 100).toInt()}%)")
+    if (bigButtons) add("Botões e áreas de toque maiores")
+    if (highContrast) add("Alto contraste (amarelo sobre preto) e avisos sempre com texto")
+    if (spokenAlarm) add("Alarme falado")
+    if (flashAlarm) add("Alarme com tela piscando")
+    if (vibration) add("Alarme com vibração")
+    if (simpleMode) add("Modo simples: uma ação por vez")
+    if (isEmpty()) add("Perfil padrão")
 }
 
 /** Erros do passo 1; null quando o campo está ok. */
@@ -57,7 +83,7 @@ fun validateBasicData(name: String, age: String): BasicDataErrors = BasicDataErr
 )
 
 @Composable
-fun Onboarding() {
+fun Onboarding(onProfile: (Profile) -> Unit, onDone: (name: String, age: Int) -> Unit) {
     // rememberSaveable: os dados sobrevivem ao voltar entre passos e à rotação da tela.
     var step by rememberSaveable { mutableIntStateOf(1) }
     var name by rememberSaveable { mutableStateOf("") }
@@ -68,8 +94,21 @@ fun Onboarding() {
 
     when (step) {
         1 -> BasicDataStep(name, { name = it }, age, { age = it }, onContinue = { step = 2 })
-        2 -> NeedsStep(needs, { needs = it }, onBack = { step = 1 }, onContinue = { step = 3 })
-        else -> StepScaffold("Passo 3 de 3", "Em breve") {}
+        2 -> NeedsStep(needs, { needs = it }, onBack = { step = 1 }, onContinue = {
+            onProfile(autoConfig(age.toInt(), needs)) // aplica já, antes de mostrar o resumo
+            step = 3
+        })
+        else -> SummaryStep(onBack = { step = 2 }, onDone = { onDone(name.trim(), age.toInt()) })
+    }
+}
+
+@Composable
+private fun SummaryStep(onBack: () -> Unit, onDone: () -> Unit) {
+    StepScaffold("Passo 3 de 3", "Pronto! Ajustamos o app para você") {
+        LocalProfile.current.summary().forEach { Text("✓ $it", style = MaterialTheme.typography.titleMedium) }
+        Text("Você pode mudar isso quando quiser em Ajustes.")
+        BigButton("Começar a usar", onDone)
+        BackButton(onBack)
     }
 }
 
@@ -127,7 +166,7 @@ private fun NeedsStep(
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .heightIn(min = 64.dp)
+                    .heightIn(min = if (LocalProfile.current.bigButtons) 80.dp else 64.dp)
                     .toggleable(checked, role = Role.Checkbox) { onNeeds(if (it) needs + need else needs - need) }
                     .padding(horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -137,9 +176,7 @@ private fun NeedsStep(
             }
         }
         BigButton("Ajustar o app para mim", onContinue)
-        OutlinedButton(onClick = onBack, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
-            Text("Voltar", style = MaterialTheme.typography.titleMedium)
-        }
+        BackButton(onBack)
     }
 }
 
@@ -155,9 +192,18 @@ internal fun StepScaffold(stepLabel: String, title: String, content: @Composable
     }
 }
 
+private val buttonHeight @Composable get() = if (LocalProfile.current.bigButtons) 72.dp else 56.dp
+
 @Composable
 internal fun BigButton(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)) {
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
         Text(text, style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+internal fun BackButton(onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
+        Text("Voltar", style = MaterialTheme.typography.titleMedium)
     }
 }
