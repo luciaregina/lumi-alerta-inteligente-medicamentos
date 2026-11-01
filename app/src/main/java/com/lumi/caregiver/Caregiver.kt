@@ -32,13 +32,19 @@ import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 import com.lumi.data.Caregiver
+import com.lumi.data.DoseTaken
+import com.lumi.data.Medication
 import com.lumi.data.LumiDao
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
+import com.lumi.ui.SectionTitle
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.security.SecureRandom
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 
 const val CODE_TTL_MS = 10 * 60_000L
 
@@ -48,6 +54,21 @@ data class AccessCode(val code: String, val expiresAt: Long) : java.io.Serializa
 }
 
 private val random = SecureRandom()
+
+const val MISSED_TOLERANCE_MIN = 30L
+
+/** Avisos para o responsável: dose não confirmada após a tolerância e estoque acabando. */
+fun caregiverAlerts(meds: List<Medication>, taken: List<DoseTaken>, now: LocalDateTime): List<String> {
+    val day = now.toLocalDate().toString()
+    val missed = meds.flatMap { m ->
+        m.times.filter { t ->
+            now.isAfter(now.toLocalDate().atTime(LocalTime.parse(t)).plusMinutes(MISSED_TOLERANCE_MIN)) &&
+                taken.none { it.day == day && it.medId == m.id && it.time == t }
+        }.map { "Dose não confirmada: ${m.name} das $it" }
+    }
+    val low = meds.filter { it.lowStock }.map { "Estoque acabando: ${it.name} (${it.daysLeft} dia(s))" }
+    return missed + low
+}
 
 /** Valida o código lido pelo responsável: tem que bater e estar no prazo. */
 fun AccessCode?.accepts(input: String, now: Long) = this != null && code == input.trim() && valid(now)
@@ -70,6 +91,14 @@ fun CaregiverScreen(dao: LumiDao) {
             Text("✓ Responsável conectado", style = MaterialTheme.typography.titleLarge)
             Text("${cg.name} (${cg.relation})", style = MaterialTheme.typography.headlineSmall)
             Text("Essa pessoa acompanha seus remédios e recebe avisos.")
+
+            val meds by dao.meds().collectAsState(initial = emptyList())
+            val taken by dao.takenOn(LocalDate.now().toString()).collectAsState(initial = emptyList())
+            val alerts = caregiverAlerts(meds, taken, LocalDateTime.now())
+            SectionTitle("Avisos para ${cg.name}")
+            // ponytail: simulação. Enviar como push (ex.: Firebase Cloud Messaging) quando houver backend.
+            if (alerts.isEmpty()) Text("Nenhum aviso agora. Tudo em dia!")
+            alerts.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
         }
         return
     }
