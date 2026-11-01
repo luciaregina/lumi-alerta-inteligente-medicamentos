@@ -13,4 +13,11 @@ class StockTest {
         assertEquals("Atenção", stockStatus(7))
         assertEquals("Tudo certo", stockStatus(8))
     }
+
+    @Test
+    fun alertaDeEstoqueBaixoComCincoDiasOuMenos() {
+        fun med(stock: Int) = com.lumi.data.Medication(name = "X", dose = "1", times = listOf("08:00", "20:00"), stock = stock)
+        assertEquals(true, med(11).lowStock)   // 5 dias
+        assertEquals(false, med(12).lowStock)  // 6 dias
+    }
 }

@@ -72,7 +72,7 @@ fun LumiApp(prefs: SharedPreferences) {
         }) { padding ->
             Box(Modifier.padding(padding)) {
                 when (tab) {
-                    Tab.HOME -> HomeScreen(name, dao)
+                    Tab.HOME -> HomeScreen(name, dao, onOpenStock = { tab = Tab.STOCK })
                     Tab.MEDS -> MedsScreen(dao)
                     Tab.STOCK -> StockScreen(dao)
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {

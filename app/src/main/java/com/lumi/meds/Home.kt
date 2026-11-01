@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -33,13 +35,26 @@ fun todayDoses(meds: List<Medication>): List<Dose> =
     meds.flatMap { m -> m.times.map { Dose(m, it) } }.sortedWith(compareBy({ it.time }, { it.med.name }))
 
 @Composable
-fun HomeScreen(name: String, dao: LumiDao) {
+fun HomeScreen(name: String, dao: LumiDao, onOpenStock: () -> Unit) {
     val meds by dao.meds().collectAsState(initial = emptyList())
     val today = remember { LocalDate.now().toString() }
     val taken by dao.takenOn(today).collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
     Screen("Olá, $name!") {
+        val low = meds.filter { it.lowStock }
+        if (low.isNotEmpty()) {
+            Card(
+                Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("⚠ Estoque acabando", style = MaterialTheme.typography.titleLarge)
+                    Text(low.joinToString { "${it.name} (${it.daysLeft} dia(s))" }, style = MaterialTheme.typography.bodyLarge)
+                    TextButton(onClick = onOpenStock, modifier = Modifier.focusRing()) { Text("Ver estoque") }
+                }
+            }
+        }
         Text("Seus remédios de hoje", style = MaterialTheme.typography.titleLarge)
         val doses = todayDoses(meds)
         if (doses.isEmpty()) Text("Nenhuma dose para hoje. Cadastre seus remédios na aba Remédios.")

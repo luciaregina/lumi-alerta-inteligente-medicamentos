@@ -28,6 +28,7 @@ data class Medication(
 ) {
     val dosesPerDay get() = times.size
     val daysLeft get() = if (dosesPerDay == 0) Int.MAX_VALUE else stock / dosesPerDay
+    val lowStock get() = daysLeft <= 5
 }
 
 /** Uma dose confirmada num dia. */
@@ -65,6 +66,9 @@ interface LumiDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTaken(d: DoseTaken): Long
+
+    @Query("UPDATE Medication SET stock = stock + :units WHERE id = :id")
+    suspend fun addStock(id: Long, units: Int)
 
     @Query("UPDATE Medication SET stock = MAX(stock - 1, 0) WHERE id = :id")
     suspend fun decrementStock(id: Long)

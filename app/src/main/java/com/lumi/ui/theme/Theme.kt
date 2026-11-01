@@ -41,6 +41,7 @@ private val HighContrast = darkColorScheme(
     surfaceVariant = Color.Black, onSurfaceVariant = Yellow,
     surfaceContainer = Color.Black, surfaceContainerHigh = Color.Black, surfaceContainerHighest = Color.Black,
     outline = Yellow, error = Yellow, onError = Color.Black,
+    errorContainer = Color.Black, onErrorContainer = Yellow,
 )
 
 @Composable
