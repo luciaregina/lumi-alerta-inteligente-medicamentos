@@ -1,5 +1,6 @@
 package com.lumi.ui
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -31,18 +37,27 @@ fun Screen(title: String, label: String? = null, content: @Composable () -> Unit
     }
 }
 
+/** Borda grossa quando o controle recebe foco (teclado, switch, leitor de tela). */
+@Composable
+fun Modifier.focusRing(): Modifier {
+    var focused by remember { mutableStateOf(false) }
+    val color = MaterialTheme.colorScheme.primary
+    return onFocusChanged { focused = it.isFocused }
+        .then(if (focused) Modifier.border(3.dp, color, MaterialTheme.shapes.small) else Modifier)
+}
+
 private val buttonHeight @Composable get() = if (LocalProfile.current.bigButtons) 72.dp else 56.dp
 
 @Composable
 fun BigButton(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
+    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight).focusRing()) {
         Text(text, style = MaterialTheme.typography.titleMedium)
     }
 }
 
 @Composable
 fun BackButton(onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
+    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight).focusRing()) {
         Text("Voltar", style = MaterialTheme.typography.titleMedium)
     }
 }

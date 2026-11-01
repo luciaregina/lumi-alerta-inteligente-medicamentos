@@ -11,20 +11,49 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
 import com.lumi.LocalProfile
 import com.lumi.Profile
+import com.lumi.ThemeMode
+
+// Tokens de cor. Texto principal sobre fundo passa WCAG AA (4,5:1); no alto contraste, AAA (7:1).
+private val Teal = Color(0xFF00585E)     // 8,2:1 sobre branco
+private val TealLight = Color(0xFF7FD3DA) // 10,9:1 sobre #121212
+private val Yellow = Color(0xFFFFEB3B)    // 17:1 sobre preto
+
+private val Light = lightColorScheme(
+    primary = Teal, onPrimary = Color.White,
+    background = Color.White, onBackground = Color(0xFF1A1C1C),
+    surface = Color.White, onSurface = Color(0xFF1A1C1C),
+    error = Color(0xFFB3261E), onError = Color.White,
+)
+
+private val Dark = darkColorScheme(
+    primary = TealLight, onPrimary = Color(0xFF00363A),
+    background = Color(0xFF121212), onBackground = Color(0xFFE2E3E3),
+    surface = Color(0xFF121212), onSurface = Color(0xFFE2E3E3),
+    error = Color(0xFFFFB4AB), onError = Color(0xFF690005),
+)
 
 private val HighContrast = darkColorScheme(
-    primary = Color(0xFFFFEB3B), onPrimary = Color.Black,
-    background = Color.Black, onBackground = Color(0xFFFFEB3B),
-    surface = Color.Black, onSurface = Color(0xFFFFEB3B),
-    onSurfaceVariant = Color(0xFFFFEB3B), outline = Color(0xFFFFEB3B),
+    primary = Yellow, onPrimary = Color.Black,
+    secondary = Yellow, onSecondary = Color.Black,
+    secondaryContainer = Yellow, onSecondaryContainer = Color.Black,
+    background = Color.Black, onBackground = Yellow,
+    surface = Color.Black, onSurface = Yellow,
+    surfaceVariant = Color.Black, onSurfaceVariant = Yellow,
+    surfaceContainer = Color.Black, surfaceContainerHigh = Color.Black, surfaceContainerHighest = Color.Black,
+    outline = Yellow, error = Yellow, onError = Color.Black,
 )
 
 @Composable
 fun LumiTheme(profile: Profile = Profile(), content: @Composable () -> Unit) {
+    val dark = when (profile.theme) {
+        ThemeMode.AUTO -> isSystemInDarkTheme()
+        ThemeMode.LIGHT -> false
+        ThemeMode.DARK -> true
+    }
     val colors = when {
         profile.highContrast -> HighContrast
-        isSystemInDarkTheme() -> darkColorScheme()
-        else -> lightColorScheme()
+        dark -> Dark
+        else -> Light
     }
     val density = LocalDensity.current
     CompositionLocalProvider(

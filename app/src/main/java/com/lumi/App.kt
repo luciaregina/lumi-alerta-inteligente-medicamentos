@@ -65,7 +65,7 @@ fun LumiApp(prefs: SharedPreferences) {
         }) { padding ->
             Box(Modifier.padding(padding)) {
                 when (tab) {
-                    Tab.SETTINGS -> SettingsScreen(onRedoOnboarding = {
+                    Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()
                         userName = null
                     })
