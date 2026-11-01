@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,6 +18,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lumi.data.Medication
@@ -39,6 +44,9 @@ fun parseTimes(text: String): List<String>? {
     }.distinct().sorted()
 }
 
+/** O que o OCR devolveria de uma receita. */
+fun simulatedPrescription() = Medication(0, "Losartana 50 mg", "1 comprimido", listOf("08:00", "20:00"), 30, "Dra. Ana Souza")
+
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MedForm(initial: Medication? = null, onSave: (Medication) -> Unit, onCancel: () -> Unit) {
@@ -48,12 +56,29 @@ fun MedForm(initial: Medication? = null, onSave: (Medication) -> Unit, onCancel:
     var stock by rememberSaveable { mutableStateOf(initial?.stock?.toString().orEmpty()) }
     var doctor by rememberSaveable { mutableStateOf(initial?.doctor.orEmpty()) }
     var showErrors by rememberSaveable { mutableStateOf(false) }
+    var scanned by rememberSaveable { mutableStateOf(false) }
 
     BackHandler(onBack = onCancel)
     val parsed = parseTimes(times)
     val nameError = name.isBlank()
 
     Screen("Novo remédio") {
+        OutlinedButton(
+            onClick = {
+                // ponytail: simulação. Trocar por câmera + OCR (ex.: ML Kit Text Recognition) quando o time escolher a solução.
+                val r = simulatedPrescription()
+                name = r.name; dose = r.dose; times = r.times.joinToString(", "); stock = r.stock.toString(); doctor = r.doctor
+                scanned = true
+            },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp).focusRing(),
+        ) { Text("📷 Escanear receita (simulação)") }
+        if (scanned) {
+            Text(
+                "Dados lidos da receita. Confira tudo antes de salvar.",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+        }
         OutlinedTextField(
             value = name, onValueChange = { name = it },
             label = { Text("Nome do remédio") },
