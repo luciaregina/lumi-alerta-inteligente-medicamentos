@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -99,6 +101,20 @@ fun CaregiverScreen(dao: LumiDao) {
             // ponytail: simulação. Enviar como push (ex.: Firebase Cloud Messaging) quando houver backend.
             if (alerts.isEmpty()) Text("Nenhum aviso agora. Tudo em dia!")
             alerts.forEach { Text("• $it", style = MaterialTheme.typography.bodyLarge) }
+
+            var confirm by rememberSaveable { mutableStateOf(false) }
+            BackButton(onClick = { confirm = true }, text = "Remover acesso")
+            if (confirm) {
+                AlertDialog(
+                    onDismissRequest = { confirm = false },
+                    title = { Text("Remover o acesso de ${cg.name}?") },
+                    text = { Text("${cg.name} deixa de ver seus remédios e de receber avisos na hora.") },
+                    confirmButton = {
+                        TextButton(onClick = { scope.launch { dao.removeCaregiver() }; confirm = false }) { Text("Remover") }
+                    },
+                    dismissButton = { TextButton(onClick = { confirm = false }) { Text("Cancelar") } },
+                )
+            }
         }
         return
     }
