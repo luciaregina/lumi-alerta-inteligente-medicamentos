@@ -1,0 +1,77 @@
+package com.lumi
+
+import android.content.SharedPreferences
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.unit.dp
+import com.lumi.onboarding.Onboarding
+import com.lumi.settings.SettingsScreen
+import com.lumi.ui.theme.LumiTheme
+
+enum class Tab(val label: String, val icon: String) {
+    HOME("Início", "🏠"),
+    MEDS("Remédios", "💊"),
+    STOCK("Estoque", "📦"),
+    CAREGIVER("Cuidador", "👤"),
+    SETTINGS("Ajustes", "⚙️"),
+}
+
+@Composable
+fun LumiApp(prefs: SharedPreferences) {
+    var profile by remember { mutableStateOf(prefs.loadProfile()) }
+    var userName by remember { mutableStateOf(prefs.getString("name", null)) }
+    var tab by rememberSaveable { mutableStateOf(Tab.HOME) }
+    val setProfile = { p: Profile -> profile = p; prefs.saveProfile(p) }
+
+    LumiTheme(profile) {
+        val name = userName
+        if (name == null) {
+            Scaffold { padding ->
+                Box(Modifier.padding(padding)) {
+                    Onboarding(onProfile = setProfile, onDone = { n, age ->
+                        prefs.edit().putString("name", n).putInt("age", age).apply()
+                        userName = n
+                        tab = Tab.HOME
+                    })
+                }
+            }
+            return@LumiTheme
+        }
+        Scaffold(bottomBar = {
+            NavigationBar {
+                Tab.entries.forEach { t ->
+                    NavigationBarItem(
+                        selected = t == tab,
+                        onClick = { tab = t },
+                        // O ícone é decorativo; o leitor de tela lê só o rótulo.
+                        icon = { Text(t.icon, Modifier.clearAndSetSemantics {}) },
+                        label = { Text(t.label) },
+                    )
+                }
+            }
+        }) { padding ->
+            Box(Modifier.padding(padding)) {
+                when (tab) {
+                    Tab.SETTINGS -> SettingsScreen(onRedoOnboarding = {
+                        prefs.edit().remove("name").remove("age").apply()
+                        userName = null
+                    })
+                    else -> Text(tab.label, Modifier.padding(24.dp), style = MaterialTheme.typography.headlineMedium)
+                }
+            }
+        }
+    }
+}

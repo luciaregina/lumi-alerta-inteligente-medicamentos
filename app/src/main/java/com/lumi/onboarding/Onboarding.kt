@@ -1,21 +1,14 @@
 package com.lumi.onboarding
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,14 +20,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lumi.LocalProfile
 import com.lumi.Profile
+import com.lumi.ui.BackButton
+import com.lumi.ui.BigButton
+import com.lumi.ui.Screen
 
 enum class Need(val label: String) {
     VISION("Visão"),
@@ -104,7 +98,7 @@ fun Onboarding(onProfile: (Profile) -> Unit, onDone: (name: String, age: Int) ->
 
 @Composable
 private fun SummaryStep(onBack: () -> Unit, onDone: () -> Unit) {
-    StepScaffold("Passo 3 de 3", "Pronto! Ajustamos o app para você") {
+    Screen("Pronto! Ajustamos o app para você", "Passo 3 de 3") {
         LocalProfile.current.summary().forEach { Text("✓ $it", style = MaterialTheme.typography.titleMedium) }
         Text("Você pode mudar isso quando quiser em Ajustes.")
         BigButton("Começar a usar", onDone)
@@ -123,7 +117,7 @@ private fun BasicDataStep(
     var showErrors by rememberSaveable { mutableStateOf(false) }
     val errors = validateBasicData(name, age)
 
-    StepScaffold("Passo 1 de 3", "Bem-vindo ao LUMI") {
+    Screen("Bem-vindo ao LUMI", "Passo 1 de 3") {
         Text("Vamos começar com alguns dados para deixar o app do seu jeito.")
         OutlinedTextField(
             value = name,
@@ -159,7 +153,7 @@ private fun NeedsStep(
     onBack: () -> Unit,
     onContinue: () -> Unit,
 ) {
-    StepScaffold("Passo 2 de 3", "Precisa de alguma ajuda?") {
+    Screen("Precisa de alguma ajuda?", "Passo 2 de 3") {
         Text("Marque o que combina com você. Pode marcar várias opções ou nenhuma.")
         Need.entries.forEach { need ->
             val checked = need in needs
@@ -177,33 +171,5 @@ private fun NeedsStep(
         }
         BigButton("Ajustar o app para mim", onContinue)
         BackButton(onBack)
-    }
-}
-
-@Composable
-internal fun StepScaffold(stepLabel: String, title: String, content: @Composable () -> Unit) {
-    Column(
-        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Text(stepLabel, style = MaterialTheme.typography.labelLarge)
-        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
-        content()
-    }
-}
-
-private val buttonHeight @Composable get() = if (LocalProfile.current.bigButtons) 72.dp else 56.dp
-
-@Composable
-internal fun BigButton(text: String, onClick: () -> Unit) {
-    Button(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
-        Text(text, style = MaterialTheme.typography.titleMedium)
-    }
-}
-
-@Composable
-internal fun BackButton(onClick: () -> Unit) {
-    OutlinedButton(onClick = onClick, modifier = Modifier.fillMaxWidth().heightIn(min = buttonHeight)) {
-        Text("Voltar", style = MaterialTheme.typography.titleMedium)
     }
 }
