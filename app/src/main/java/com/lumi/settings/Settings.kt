@@ -27,6 +27,7 @@ import com.lumi.Profile
 import com.lumi.ThemeMode
 import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
+import com.lumi.ui.SectionTitle
 import com.lumi.ui.focusRing
 
 /** Tamanho de letra em passos de 10%, entre 90% e 200%. */
@@ -97,6 +98,3 @@ private fun Toggle(label: String, checked: Boolean, onChange: (Boolean) -> Unit)
     }
 }
 
-@Composable
-internal fun SectionTitle(text: String) =
-    Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })

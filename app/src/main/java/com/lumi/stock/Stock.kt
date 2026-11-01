@@ -25,12 +25,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.lumi.data.LumiDao
 import com.lumi.data.Medication
 import com.lumi.ui.Screen
+import com.lumi.ui.SectionTitle
 import com.lumi.ui.focusRing
 import kotlinx.coroutines.launch
 
@@ -50,6 +53,7 @@ fun StockScreen(dao: LumiDao) {
     Screen("Estoque") {
         if (meds.isEmpty()) Text("Nenhum remédio ainda.", style = MaterialTheme.typography.titleMedium)
         meds.forEach { m -> StockCard(m) { refill = m.id } }
+        WhereToBuy()
     }
 
     refill?.let { id ->

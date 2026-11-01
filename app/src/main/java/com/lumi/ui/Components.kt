@@ -37,6 +37,10 @@ fun Screen(title: String, label: String? = null, content: @Composable () -> Unit
     }
 }
 
+@Composable
+fun SectionTitle(text: String) =
+    Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.semantics { heading() })
+
 /** Borda grossa quando o controle recebe foco (teclado, switch, leitor de tela). */
 @Composable
 fun Modifier.focusRing(): Modifier {
