@@ -88,7 +88,7 @@ fun LumiApp(prefs: SharedPreferences) {
                     Tab.HOME -> HomeScreen(name, dao, onOpenStock = { tab = Tab.STOCK })
                     Tab.MEDS -> MedsScreen(dao)
                     Tab.STOCK -> StockScreen(dao)
-                    Tab.CAREGIVER -> CaregiverScreen()
+                    Tab.CAREGIVER -> CaregiverScreen(dao)
                     Tab.SETTINGS -> SettingsScreen(profile, setProfile, onRedoOnboarding = {
                         prefs.edit().remove("name").remove("age").apply()
                         userName = null

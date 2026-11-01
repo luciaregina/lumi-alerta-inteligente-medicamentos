@@ -6,14 +6,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -23,13 +27,17 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
+import com.lumi.data.Caregiver
+import com.lumi.data.LumiDao
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
 import com.lumi.ui.Screen
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.security.SecureRandom
 
 const val CODE_TTL_MS = 10 * 60_000L
@@ -41,14 +49,46 @@ data class AccessCode(val code: String, val expiresAt: Long) : java.io.Serializa
 
 private val random = SecureRandom()
 
+/** Valida o código lido pelo responsável: tem que bater e estar no prazo. */
+fun AccessCode?.accepts(input: String, now: Long) = this != null && code == input.trim() && valid(now)
+
 fun newAccessCode(now: Long) = AccessCode("%06d".format(random.nextInt(1_000_000)), now + CODE_TTL_MS)
 
 @Composable
-fun CaregiverScreen() {
+fun CaregiverScreen(dao: LumiDao) {
+    val caregiver by dao.caregiver().collectAsState(initial = null)
+    val scope = rememberCoroutineScope()
     var code by rememberSaveable { mutableStateOf<AccessCode?>(null) }
+    var scanned by rememberSaveable { mutableStateOf(false) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(code) {
         while (code != null) { now = System.currentTimeMillis(); delay(1000) }
+    }
+
+    caregiver?.let { cg ->
+        Screen("Responsável") {
+            Text("✓ Responsável conectado", style = MaterialTheme.typography.titleLarge)
+            Text("${cg.name} (${cg.relation})", style = MaterialTheme.typography.headlineSmall)
+            Text("Essa pessoa acompanha seus remédios e recebe avisos.")
+        }
+        return
+    }
+
+    if (scanned) {
+        LinkForm(
+            scannedCode = code?.code.orEmpty(),
+            onLink = { name, relation, typed ->
+                // Uso único: o código é descartado assim que o vínculo é criado.
+                if (code.accepts(typed, System.currentTimeMillis())) {
+                    scope.launch { dao.setCaregiver(Caregiver(name = name, relation = relation)) }
+                    code = null
+                    scanned = false
+                    true
+                } else false
+            },
+            onCancel = { scanned = false },
+        )
+        return
     }
 
     Screen("Responsável") {
@@ -67,8 +107,43 @@ fun CaregiverScreen() {
                 modifier = Modifier.semantics { contentDescription = "Código ${c.code.toList().joinToString(" ")}" },
             )
             Text("Vale por mais %d:%02d".format(left / 60, left % 60), style = MaterialTheme.typography.bodyLarge)
+            // ponytail: simulação. No app do responsável: câmera lendo o QR (ex.: ML Kit Barcode) e API criando o vínculo.
+            BigButton("Simular: responsável escaneou") { scanned = true }
             BackButton(onClick = { code = null }, text = "Cancelar código")
         }
+    }
+}
+
+/** O que o responsável preenche no app dele ao escanear o QR. */
+@Composable
+private fun LinkForm(
+    scannedCode: String,
+    onLink: (name: String, relation: String, code: String) -> Boolean,
+    onCancel: () -> Unit,
+) {
+    var name by rememberSaveable { mutableStateOf("") }
+    var relation by rememberSaveable { mutableStateOf("") }
+    var typed by rememberSaveable { mutableStateOf(scannedCode) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    Screen("Responsável escaneou o código", "Simulação do app do responsável") {
+        OutlinedTextField(name, { name = it }, label = { Text("Nome do responsável") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(relation, { relation = it }, label = { Text("Parentesco (ex.: Filha)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(
+            typed, { typed = it.filter(Char::isDigit).take(6) },
+            label = { Text("Código lido do QR") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            isError = error != null,
+            supportingText = error?.let { { Text(it) } },
+            singleLine = true, modifier = Modifier.fillMaxWidth(),
+        )
+        BigButton("Conectar") {
+            error = when {
+                name.isBlank() || relation.isBlank() -> "Preencha nome e parentesco."
+                !onLink(name.trim(), relation.trim(), typed) -> "Código inválido ou expirado."
+                else -> null
+            }
+        }
+        BackButton(onCancel)
     }
 }
 
