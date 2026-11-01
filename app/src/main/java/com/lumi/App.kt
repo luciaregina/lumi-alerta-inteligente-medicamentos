@@ -1,6 +1,10 @@
 package com.lumi
 
+import android.Manifest
 import android.content.SharedPreferences
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -9,6 +13,8 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -18,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import com.lumi.alarm.Alarms
 import com.lumi.data.LumiDb
 import com.lumi.meds.HomeScreen
 import com.lumi.meds.MedsScreen
@@ -56,6 +63,13 @@ fun LumiApp(prefs: SharedPreferences) {
                 }
             }
             return@LumiTheme
+        }
+        // Reagenda os alarmes sempre que a lista de remédios muda.
+        val meds by dao.meds().collectAsState(initial = emptyList())
+        LaunchedEffect(meds) { Alarms.scheduleAll(context, meds) }
+        if (Build.VERSION.SDK_INT >= 33) {
+            val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+            LaunchedEffect(Unit) { ask.launch(Manifest.permission.POST_NOTIFICATIONS) }
         }
         Scaffold(bottomBar = {
             NavigationBar {

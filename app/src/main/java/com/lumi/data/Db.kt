@@ -64,6 +64,9 @@ interface LumiDao {
     @Query("SELECT * FROM DoseTaken WHERE day = :day")
     fun takenOn(day: String): Flow<List<DoseTaken>>
 
+    @Query("SELECT EXISTS(SELECT 1 FROM DoseTaken WHERE day = :day AND medId = :medId AND time = :time)")
+    suspend fun isTaken(day: String, medId: Long, time: String): Boolean
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertTaken(d: DoseTaken): Long
 
