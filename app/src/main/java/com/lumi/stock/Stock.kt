@@ -101,6 +101,7 @@ private fun StockCard(m: Medication, onRefill: () -> Unit) {
             LinearProgressIndicator(
                 progress = { (days / 30f).coerceIn(0f, 1f) },
                 color = color,
+                trackColor = color.copy(alpha = 0.25f), // diferencia cheio e vazio também no alto contraste
                 modifier = Modifier.fillMaxWidth().clearAndSetSemantics {},
             )
             OutlinedButton(onClick = onRefill, modifier = Modifier.heightIn(min = 48.dp).focusRing()) {
