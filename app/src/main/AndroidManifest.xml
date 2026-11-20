@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
+    <!-- Leitura do QR Code do vínculo com o responsável (SCRUM-38). -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <!-- Necessário a partir do Android 11 para encontrar o mecanismo de voz (TextToSpeech). -->
     <queries>

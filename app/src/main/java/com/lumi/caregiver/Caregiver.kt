@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -87,15 +89,104 @@ fun AccessCode?.accepts(input: String, now: Long) = this != null && code == inpu
 
 fun newAccessCode(now: Long) = AccessCode("%06d".format(random.nextInt(1_000_000)), now + CODE_TTL_MS)
 
+/** Etapas da tela. As que começam com CG_ acontecem no celular do responsável. */
+private enum class Step { HOME, SCAN_REPLY, TYPE_REPLY, CG_SCAN, CG_TYPE, CG_FORM, CG_REPLY }
+
 @Composable
 fun CaregiverScreen(dao: LumiDao) {
     val caregiver by dao.caregiver().collectAsState(initial = null)
     val scope = rememberCoroutineScope()
     var code by rememberSaveable { mutableStateOf<AccessCode?>(null) }
-    var scanned by rememberSaveable { mutableStateOf(false) }
+    var step by rememberSaveable { mutableStateOf(Step.HOME) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
+    // Lado do responsável: código lido do paciente e QR de resposta.
+    var patientCode by rememberSaveable { mutableStateOf("") }
+    var replyQr by rememberSaveable { mutableStateOf("") }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(code) {
         while (code != null) { now = System.currentTimeMillis(); delay(1000) }
+    }
+    val go = { s: Step -> error = null; step = s }
+
+    /** Cria o vínculo se o código da resposta bater e estiver no prazo. Uso único: descarta o código. */
+    val link = { reply: CaregiverReply ->
+        if (code.accepts(reply.code, System.currentTimeMillis())) {
+            scope.launch { dao.setCaregiver(Caregiver(name = reply.name, relation = reply.relation)) }
+            code = null
+            go(Step.HOME)
+        } else {
+            error = "O código não confere ou já expirou. Gere um novo QR Code e tente de novo."
+        }
+    }
+
+    when (step) {
+        Step.SCAN_REPLY -> {
+            Screen("Escanear resposta do responsável") {
+                Text("Aponte a câmera para o QR Code que aparece no celular do responsável.")
+                ErrorText(error)
+                QrScanner { text ->
+                    val reply = parseReplyQr(text)
+                    if (reply != null) link(reply)
+                    else error = if (parsePatientQr(text) != null) "Este é o seu próprio QR Code. Escaneie o do celular do responsável."
+                    else "Este QR Code não é uma resposta do LUMI."
+                }
+                BackButton(onClick = { go(Step.TYPE_REPLY) }, text = "Digitar em vez de escanear")
+                BackButton(onClick = { go(Step.HOME) })
+            }
+            return
+        }
+        Step.TYPE_REPLY -> {
+            ReplyForm(
+                title = "Dados do responsável",
+                hint = "Digite o que aparece no celular do responsável.",
+                askCode = true,
+                error = error,
+                onDone = link,
+                onCancel = { go(Step.HOME) },
+            )
+            return
+        }
+        Step.CG_SCAN -> {
+            Screen("Escanear QR do paciente", "Celular do responsável") {
+                Text("Aponte a câmera para o QR Code que aparece no celular do paciente.")
+                ErrorText(error)
+                QrScanner { text ->
+                    val c = parsePatientQr(text)
+                    if (c != null) { patientCode = c; go(Step.CG_FORM) }
+                    else error = "Este QR Code não é do LUMI. Escaneie o QR mostrado no celular do paciente."
+                }
+                BackButton(onClick = { go(Step.CG_TYPE) }, text = "Digitar o código")
+                BackButton(onClick = { go(Step.HOME) })
+            }
+            return
+        }
+        Step.CG_TYPE, Step.CG_FORM -> {
+            ReplyForm(
+                title = "Seus dados",
+                hint = "O paciente vai ver seu nome e parentesco.",
+                askCode = step == Step.CG_TYPE,
+                presetCode = patientCode,
+                error = error,
+                onDone = { r -> replyQr = r.toQr(); go(Step.CG_REPLY) },
+                onCancel = { go(Step.HOME) },
+            )
+            return
+        }
+        Step.CG_REPLY -> {
+            val r = parseReplyQr(replyQr)
+            Screen("Mostre para o paciente", "Celular do responsável") {
+                Text("No celular do paciente, toque em \"Escanear resposta do responsável\" e aponte para este QR Code.")
+                if (r != null) {
+                    QrCode(replyQr, "QR Code de resposta do responsável", Modifier.align(Alignment.CenterHorizontally))
+                    Text("Se a câmera não funcionar, o paciente pode digitar:", style = MaterialTheme.typography.titleMedium)
+                    CodeText(r.code)
+                    Text("${r.name} (${r.relation})", style = MaterialTheme.typography.titleLarge)
+                }
+                BigButton("Pronto") { replyQr = ""; patientCode = ""; go(Step.HOME) }
+            }
+            return
+        }
+        Step.HOME -> Unit
     }
 
     caregiver?.let { cg ->
@@ -129,23 +220,6 @@ fun CaregiverScreen(dao: LumiDao) {
         return
     }
 
-    if (scanned) {
-        LinkForm(
-            scannedCode = code?.code.orEmpty(),
-            onLink = { name, relation, typed ->
-                // Uso único: o código é descartado assim que o vínculo é criado.
-                if (code.accepts(typed, System.currentTimeMillis())) {
-                    scope.launch { dao.setCaregiver(Caregiver(name = name, relation = relation)) }
-                    code = null
-                    scanned = false
-                    true
-                } else false
-            },
-            onCancel = { scanned = false },
-        )
-        return
-    }
-
     Screen("Responsável") {
         Text("Um familiar ou cuidador pode acompanhar seus remédios e receber avisos.")
         val c = code?.takeIf { it.valid(now) }
@@ -165,65 +239,93 @@ fun CaregiverScreen(dao: LumiDao) {
                 )
             }
             if (consent) BigButton("Gerar QR Code") { code = newAccessCode(System.currentTimeMillis()) }
+
+            SectionTitle("Você é o responsável?")
+            Text("Use esta opção no seu celular para acompanhar um paciente.")
+            BackButton(onClick = { go(Step.CG_SCAN) }, text = "Escanear QR do paciente")
         } else {
-            Text("Peça para o responsável escanear este código no app LUMI dele.")
-            QrCode("lumi:${c.code}", Modifier.align(Alignment.CenterHorizontally))
+            Text("1. Peça para o responsável escanear este código no app LUMI dele.")
+            QrCode(patientQr(c.code), "QR Code de acesso do responsável", Modifier.align(Alignment.CenterHorizontally))
             val left = (c.expiresAt - now) / 1000
-            Text(
-                "Código: ${c.code.chunked(3).joinToString(" ")}",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.semantics { contentDescription = "Código ${c.code.toList().joinToString(" ")}" },
-            )
+            CodeText(c.code)
             Text("Vale por mais %d:%02d".format(left / 60, left % 60), style = MaterialTheme.typography.bodyLarge)
-            // ponytail: simulação. No app do responsável: câmera lendo o QR (ex.: ML Kit Barcode) e API criando o vínculo.
-            BigButton("Simular: responsável escaneou") { scanned = true }
+            Text("2. Depois, escaneie o QR Code que vai aparecer no celular dele.")
+            BigButton("Escanear resposta do responsável") { go(Step.SCAN_REPLY) }
             BackButton(onClick = { code = null }, text = "Cancelar código")
         }
     }
 }
 
-/** O que o responsável preenche no app dele ao escanear o QR. */
+/** Mensagem de erro anunciada pelo leitor de tela assim que aparece. */
 @Composable
-private fun LinkForm(
-    scannedCode: String,
-    onLink: (name: String, relation: String, code: String) -> Boolean,
+private fun ErrorText(error: String?) {
+    error ?: return
+    Text(
+        error,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.titleMedium,
+        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+    )
+}
+
+@Composable
+private fun CodeText(code: String) = Text(
+    "Código: ${code.chunked(3).joinToString(" ")}",
+    style = MaterialTheme.typography.headlineMedium,
+    modifier = Modifier.semantics { contentDescription = "Código ${code.toList().joinToString(" ")}" },
+)
+
+/** Nome, parentesco e (se [askCode]) o código de 6 dígitos. */
+@Composable
+private fun ReplyForm(
+    title: String,
+    hint: String,
+    askCode: Boolean,
+    error: String?,
+    onDone: (CaregiverReply) -> Unit,
     onCancel: () -> Unit,
+    presetCode: String = "",
 ) {
     var name by rememberSaveable { mutableStateOf("") }
     var relation by rememberSaveable { mutableStateOf("") }
-    var typed by rememberSaveable { mutableStateOf(scannedCode) }
-    var error by rememberSaveable { mutableStateOf<String?>(null) }
-    Screen("Responsável escaneou o código", "Simulação do app do responsável") {
-        OutlinedTextField(name, { name = it }, label = { Text("Nome do responsável") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(relation, { relation = it }, label = { Text("Parentesco (ex.: Filha)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-        OutlinedTextField(
-            typed, { typed = it.filter(Char::isDigit).take(6) },
-            label = { Text("Código lido do QR") },
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            isError = error != null,
-            supportingText = error?.let { { Text(it) } },
-            singleLine = true, modifier = Modifier.fillMaxWidth(),
-        )
-        BigButton("Conectar") {
-            error = when {
+    var typed by rememberSaveable { mutableStateOf("") }
+    var formError by rememberSaveable { mutableStateOf<String?>(null) }
+    Screen(title) {
+        Text(hint)
+        ErrorText(error)
+        if (askCode) {
+            OutlinedTextField(
+                typed, { typed = it.filter(Char::isDigit).take(6) },
+                label = { Text("Código de 6 dígitos") },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true, modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        OutlinedTextField(name, { name = it.take(MAX_FIELD) }, label = { Text("Nome do responsável") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(relation, { relation = it.take(MAX_FIELD) }, label = { Text("Parentesco (ex.: Filha)") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+        ErrorText(formError)
+        BigButton("Continuar") {
+            val c = if (askCode) typed else presetCode
+            formError = when {
+                c.length != 6 -> "O código tem 6 dígitos."
                 name.isBlank() || relation.isBlank() -> "Preencha nome e parentesco."
-                !onLink(name.trim(), relation.trim(), typed) -> "Código inválido ou expirado."
                 else -> null
             }
+            if (formError == null) onDone(CaregiverReply(c, name.trim(), relation.trim()))
         }
         BackButton(onCancel)
     }
 }
 
 @Composable
-private fun QrCode(content: String, modifier: Modifier = Modifier) {
+private fun QrCode(content: String, description: String, modifier: Modifier = Modifier) {
     val matrix = remember(content) { QRCodeWriter().encode(content, BarcodeFormat.QR_CODE, 0, 0) }
     // Fundo branco fixo: leitores de QR precisam de módulos escuros sobre claro, mesmo no tema escuro.
     Box(
         modifier
             .background(Color.White)
             .padding(16.dp)
-            .semantics { contentDescription = "QR Code de acesso do responsável" },
+            .semantics { contentDescription = description },
     ) {
         Canvas(Modifier.size(220.dp)) {
             val cell = size.width / matrix.width
