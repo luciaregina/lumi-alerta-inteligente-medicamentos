@@ -23,6 +23,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -66,7 +67,13 @@ private fun CameraQr(onText: (String) -> Unit) {
     val context = LocalContext.current
     val owner = LocalLifecycleOwner.current
     val latest by rememberUpdatedState(onText)
-    val previewView = remember { PreviewView(context) }
+    // TextureView (COMPATIBLE): respeita o recorte do Compose; o SurfaceView padrão vazava por cima do texto e dos botões.
+    val previewView = remember {
+        PreviewView(context).apply {
+            implementationMode = PreviewView.ImplementationMode.COMPATIBLE
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
 
     DisposableEffect(owner) {
         val main = ContextCompat.getMainExecutor(context)
@@ -96,7 +103,7 @@ private fun CameraQr(onText: (String) -> Unit) {
 
     AndroidView(
         factory = { previewView },
-        modifier = Modifier.fillMaxWidth().aspectRatio(1f)
+        modifier = Modifier.fillMaxWidth().aspectRatio(1f).clipToBounds()
             .semantics { contentDescription = "Câmera ligada. Aponte para o QR Code." },
     )
 }
