@@ -1,6 +1,8 @@
 package com.lumi.meds
 
+import android.Manifest
 import android.content.ActivityNotFoundException
+import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -35,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import com.lumi.data.Medication
 import com.lumi.ui.BackButton
 import com.lumi.ui.BigButton
@@ -74,12 +77,21 @@ fun MedForm(initial: Medication? = null, onSave: (Medication, photo: File?) -> U
     val camera = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { ok ->
         if (ok) { hasPhoto = true; photoVersion++ }
     }
-    val takePhoto = {
+    val openCamera = {
         try {
             camera.launch(photoUri(context))
         } catch (_: ActivityNotFoundException) {
             Toast.makeText(context, "Nenhum app de câmera encontrado.", Toast.LENGTH_LONG).show()
         }
+    }
+    // O manifesto declara CAMERA (QR Code), então o Android exige a permissão até para abrir o app de câmera.
+    val askCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) openCamera()
+        else Toast.makeText(context, "Para fotografar a receita, libere a câmera nos ajustes do celular.", Toast.LENGTH_LONG).show()
+    }
+    val takePhoto = {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) openCamera()
+        else askCamera.launch(Manifest.permission.CAMERA)
     }
 
     BackHandler(onBack = onCancel)
